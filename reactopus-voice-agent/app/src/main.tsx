@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { Amplify } from "aws-amplify";
-import { awsConfig } from "./aws/config.js";
+import { awsConfig } from "./aws/config";
 
 Amplify.configure(awsConfig);
 
