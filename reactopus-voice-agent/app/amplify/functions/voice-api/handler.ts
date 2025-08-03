@@ -1,10 +1,35 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { ConnectClient, StartOutboundVoiceContactCommand } from '@aws-sdk/client-connect';
-// Note: In a Lambda function, we'll get these from environment variables instead
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+
 const REGION = process.env.AWS_REGION || 'us-east-1';
 const CONNECT_INSTANCE_ID = process.env.CONNECT_INSTANCE_ID || '<YOUR_INSTANCE_ID>';
+const GEMINI_API_KEY_PARAM = process.env.GEMINI_API_KEY_PARAM || '/reactopus/voice/GEMINI_API_KEY';
 
 const connectClient = new ConnectClient({ region: REGION });
+const ssmClient = new SSMClient({ region: REGION });
+
+// Cache for API key to avoid repeated SSM calls
+let cachedGeminiApiKey: string | null = null;
+
+async function getGeminiApiKey(): Promise<string> {
+  if (cachedGeminiApiKey) {
+    return cachedGeminiApiKey;
+  }
+
+  try {
+    const command = new GetParameterCommand({
+      Name: GEMINI_API_KEY_PARAM,
+      WithDecryption: true,
+    });
+    const response = await ssmClient.send(command);
+    cachedGeminiApiKey = response.Parameter?.Value || '';
+    return cachedGeminiApiKey;
+  } catch (error) {
+    console.error('Failed to retrieve Gemini API key from SSM:', error);
+    throw new Error('Gemini API key not configured');
+  }
+}
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log('Voice API event:', JSON.stringify(event, null, 2));
@@ -45,7 +70,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   try {
     const body = event.body ? JSON.parse(event.body) : {};
-    const { callId } = body;
+    const { callId, message } = body;
 
     if (!callId) {
       return {
@@ -55,7 +80,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    console.log('Starting outbound contact for callId:', callId);
+    console.log('Starting voice processing for callId:', callId);
+
+    // Get Gemini API key from SSM
+    const geminiApiKey = await getGeminiApiKey();
+    console.log('Gemini API key retrieved successfully');
+
+    // Here you can add Gemini API integration
+    // For now, we'll just confirm the key is available
+    const geminiStatus = geminiApiKey ? 'configured' : 'not configured';
 
     // For demonstration purposes, we'll simulate starting a contact
     // In a real implementation, you would use StartOutboundVoiceContactCommand
@@ -87,7 +120,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         success: true,
         callId,
         connectContactId: simulatedContactId,
+        geminiApiStatus: geminiStatus,
         message: 'Voice contact initiated successfully (simulated)',
+        receivedMessage: message || 'No message provided',
         timestamp: new Date().toISOString()
       })
     };
