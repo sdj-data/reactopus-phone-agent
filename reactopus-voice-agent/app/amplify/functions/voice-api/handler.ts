@@ -9,15 +9,18 @@ const connectClient = new ConnectClient({ region: REGION });
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log('Voice API event:', JSON.stringify(event, null, 2));
 
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      },
+      headers,
       body: ''
     };
   }
@@ -25,11 +28,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
+      headers,
       body: JSON.stringify({ error: 'Method not allowed' })
+    };
+  }
+
+  // Validate API Key (API Gateway handles this, but we can add additional validation)
+  const apiKey = event.headers['X-API-Key'] || event.headers['x-api-key'];
+  if (!apiKey) {
+    return {
+      statusCode: 401,
+      headers,
+      body: JSON.stringify({ error: 'API key required' })
     };
   }
 
@@ -40,10 +50,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     if (!callId) {
       return {
         statusCode: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
+        headers,
         body: JSON.stringify({ error: 'callId is required' })
       };
     }
@@ -75,10 +82,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
+      headers,
       body: JSON.stringify({
         success: true,
         callId,
@@ -93,10 +97,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
+      headers,
       body: JSON.stringify({
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error',

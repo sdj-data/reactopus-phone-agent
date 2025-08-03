@@ -1,37 +1,78 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { handleIncomingCall } from './functions/handle-incoming-call/resource';
+import { data } from './data/resource';
 import { voiceApi } from './functions/voice-api/resource';
-import { RestApi, LambdaIntegration, Cors } from 'aws-cdk-lib/aws-apigateway';
-import { CfnOutput } from 'aws-cdk-lib';
 
 const backend = defineBackend({
   auth,
-  handleIncomingCall,
+  data,
   voiceApi,
 });
 
-// Create REST API for voice endpoints
-backend.createStack("voice-api-stack", (stack) => {
-  const api = new RestApi(stack, "VoiceAPI", {
-    restApiName: "ReactopusVoiceAPI",
+// Add REST API with /voice endpoint
+backend.addOutput({
+  custom: {
+    API: {
+      [voiceApi.resourcePath]: {
+        endpoint: `https://${backend.data.resources.graphqlApi.apiId}.appsync-api.${backend.data.resources.graphqlApi.env.region}.amazonaws.com`,
+        region: backend.data.resources.graphqlApi.env.region,
+        authorizationType: "API_KEY",
+        apiKey: backend.data.resources.graphqlApi.apiKey
+      }
+    }
+  }
+});
+
+// Create REST API Gateway for voice endpoints
+backend.createStack("voice-rest-api", (stack) => {
+  const { RestApi, LambdaIntegration, Cors } = require('aws-cdk-lib/aws-apigateway');
+  const { CfnOutput } = require('aws-cdk-lib');
+
+  const api = new RestApi(stack, "VoiceRestAPI", {
+    restApiName: "voiceApi",
     description: "REST API for Reactopus Voice Agent",
     defaultCorsPreflightOptions: {
       allowOrigins: Cors.ALL_ORIGINS,
       allowMethods: Cors.ALL_METHODS,
-      allowHeaders: ['Content-Type', 'Authorization'],
+      allowHeaders: ['Content-Type', 'X-API-Key', 'Authorization'],
     },
   });
 
-  const voiceResource = api.root.addResource("api").addResource("voice");
-  const startResource = voiceResource.addResource("start");
+  // Create /voice resource
+  const voiceResource = api.root.addResource("voice");
   
-  startResource.addMethod("POST", new LambdaIntegration(backend.voiceApi.resources.lambda));
-  startResource.addMethod("OPTIONS"); // For CORS
+  // Add POST method to /voice with Lambda integration
+  voiceResource.addMethod("POST", new LambdaIntegration(backend.voiceApi.resources.lambda), {
+    apiKeyRequired: true
+  });
+  
+  // Add OPTIONS method for CORS
+  voiceResource.addMethod("OPTIONS");
 
-  // Output the API endpoint
+  // Create API key
+  const apiKey = api.addApiKey('VoiceApiKey', {
+    apiKeyName: 'voiceApiKey'
+  });
+
+  // Create usage plan
+  const usagePlan = api.addUsagePlan('VoiceApiUsagePlan', {
+    name: 'voiceApiUsagePlan',
+    apiStages: [{
+      api: api,
+      stage: api.deploymentStage
+    }]
+  });
+
+  usagePlan.addApiKey(apiKey);
+
+  // Output the API endpoint and key
   new CfnOutput(stack, "VoiceAPIEndpoint", {
     value: api.url,
-    description: "Voice API endpoint URL",
+    description: "Voice REST API endpoint URL",
+  });
+
+  new CfnOutput(stack, "VoiceAPIKey", {
+    value: apiKey.keyId,
+    description: "Voice REST API Key ID",
   });
 });
