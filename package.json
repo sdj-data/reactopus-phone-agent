@@ -1,0 +1,33 @@
+{
+  "name": "reactopus-phone-agent",
+  "version": "1.0.0",
+  "description": "Bilingual AI-powered phone service for Reactopus",
+  "private": true,
+  "scripts": {
+    "dev": "cd reactopus-voice-agent/app && npm run dev",
+    "build": "cd reactopus-voice-agent/app && npm run build",
+    "preview": "cd reactopus-voice-agent/app && npm run preview",
+    "lint": "cd reactopus-voice-agent/app && npm run lint",
+    "install-deps": "cd reactopus-voice-agent/app && npm install",
+    "amplify:push": "cd reactopus-voice-agent/app && npx amplify push",
+    "amplify:sandbox": "cd reactopus-voice-agent/app && npx amplify sandbox",
+    "setup-connect": "./setup-connect.sh",
+    "test-voice-api": "cd reactopus-voice-agent/app && node test-voice-api.js"
+  },
+  "keywords": [
+    "ai",
+    "voice",
+    "phone",
+    "aws",
+    "amplify",
+    "connect",
+    "gemini",
+    "multilingual"
+  ],
+  "author": "Reactopus Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "."
+  }
+}

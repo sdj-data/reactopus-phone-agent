@@ -1,0 +1,135 @@
+{
+  "Version": "2019-10-30",
+  "StartAction": "12345678-1234-1234-1234-123456789012",
+  "Actions": [
+    {
+      "Identifier": "12345678-1234-1234-1234-123456789012",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "Hello! Welcome to Reactopus Voice Agent. I can help you in English or Spanish. Please speak after the tone."
+      },
+      "Transitions": {
+        "NextAction": "23456789-1234-1234-1234-123456789012",
+        "Errors": [],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "23456789-1234-1234-1234-123456789012",
+      "Type": "GetUserInput",
+      "Parameters": {
+        "Text": "Please tell me how I can help you today.",
+        "InputType": "VOICE",
+        "DTMF": {
+          "MaxDigits": "1",
+          "Timeout": "5",
+          "InterDigitTimeout": "2",
+          "TerminatorDigits": "#"
+        },
+        "Speech": {
+          "MaxDuration": "30",
+          "Timeout": "8",
+          "LanguageCode": "en-US"
+        }
+      },
+      "Transitions": {
+        "NextAction": "34567890-1234-1234-1234-123456789012",
+        "Errors": [
+          {
+            "NextAction": "45678901-1234-1234-1234-123456789012",
+            "ErrorType": "InputTimeLimitExceeded"
+          },
+          {
+            "NextAction": "45678901-1234-1234-1234-123456789012",
+            "ErrorType": "NoInputProvided"
+          }
+        ],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "34567890-1234-1234-1234-123456789012",
+      "Type": "InvokeExternalResource",
+      "Parameters": {
+        "FunctionArn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME",
+        "InvocationTimeLimitSeconds": "30",
+        "ResponseValidation": {
+          "ResponseType": "JSON"
+        }
+      },
+      "Transitions": {
+        "NextAction": "56789012-1234-1234-1234-123456789012",
+        "Errors": [
+          {
+            "NextAction": "45678901-1234-1234-1234-123456789012",
+            "ErrorType": "Lambda"
+          }
+        ],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "56789012-1234-1234-1234-123456789012",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "$.External.response"
+      },
+      "Transitions": {
+        "NextAction": "67890123-1234-1234-1234-123456789012",
+        "Errors": [],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "67890123-1234-1234-1234-123456789012",
+      "Type": "GetUserInput",
+      "Parameters": {
+        "Text": "Is there anything else I can help you with?",
+        "InputType": "VOICE",
+        "DTMF": {
+          "MaxDigits": "1",
+          "Timeout": "5",
+          "InterDigitTimeout": "2",
+          "TerminatorDigits": "#"
+        },
+        "Speech": {
+          "MaxDuration": "30",
+          "Timeout": "8",
+          "LanguageCode": "en-US"
+        }
+      },
+      "Transitions": {
+        "NextAction": "34567890-1234-1234-1234-123456789012",
+        "Errors": [
+          {
+            "NextAction": "78901234-1234-1234-1234-123456789012",
+            "ErrorType": "InputTimeLimitExceeded"
+          },
+          {
+            "NextAction": "78901234-1234-1234-1234-123456789012",
+            "ErrorType": "NoInputProvided"
+          }
+        ],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "45678901-1234-1234-1234-123456789012",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "I'm sorry, I didn't understand that. Let me transfer you to a human agent."
+      },
+      "Transitions": {
+        "NextAction": "78901234-1234-1234-1234-123456789012",
+        "Errors": [],
+        "Conditions": []
+      }
+    },
+    {
+      "Identifier": "78901234-1234-1234-1234-123456789012",
+      "Type": "DisconnectParticipant",
+      "Parameters": {},
+      "Transitions": {}
+    }
+  ]
+}
