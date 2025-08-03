@@ -7,10 +7,14 @@ For future expansion: call logs, conversation history, user preferences, etc.
 =========================================================================*/
 
 const schema = a.schema({
-  // Future models for voice agent functionality:
-  // CallLog: a.model({ ... })
-  // ConversationHistory: a.model({ ... })
-  // UserPreferences: a.model({ ... })
+  CallLog: a
+    .model({
+      id: a.id(),
+      callId: a.string().required(),
+      status: a.string().required(),
+      timestamp: a.datetime(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
