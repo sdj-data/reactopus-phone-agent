@@ -1,6 +1,7 @@
 version: 1
 applications:
-  - frontend:
+  - appRoot: reactopus-voice-agent/app
+    frontend:
       phases:
         preBuild:
           commands:
